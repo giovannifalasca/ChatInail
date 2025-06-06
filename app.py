@@ -1,11 +1,10 @@
-# app.py
 import streamlit as st
 import pandas as pd
-import openai
+from openai import OpenAI
 import os
 
-# Imposta chiave OpenAI
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Inizializza il client OpenAI
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Carica dati
 df = pd.read_csv("Infortuni.csv")
@@ -15,7 +14,7 @@ st.title("Chat INAIL – Interroga i dati sugli infortuni")
 user_question = st.text_input("Fai una domanda:", "")
 
 if user_question:
-    # Prepara contesto
+    # Prepara contesto tabellare (prime righe per non sovraccaricare)
     context = df.head(10).to_string(index=False)
 
     prompt = f"""
@@ -26,13 +25,13 @@ if user_question:
     {user_question}
     """
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "Sei un esperto di sicurezza sul lavoro e analisi dei dati INAIL."},
+            {"role": "system", "content": "Sei un esperto INAIL che analizza i dati sugli infortuni."},
             {"role": "user", "content": prompt}
         ]
     )
 
     st.write("Risposta:")
-    st.write(response['choices'][0]['message']['content'])
+    st.write(response.choices[0].message.content)
