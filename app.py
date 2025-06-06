@@ -8,7 +8,7 @@ import os
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Carica dati
-df = pd.read_csv("infortuni.csv")
+df = pd.read_csv("Infortuni.csv")
 
 st.title("Chat INAIL – Interroga i dati sugli infortuni")
 
