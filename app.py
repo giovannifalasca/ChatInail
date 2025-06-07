@@ -52,10 +52,22 @@ if user_question:
         ]
     )
 
-    st.write("Risposta:")
-    st.write(response.choices[0].message.content)
-    
-    # Mostra anche i dati di esempio per riferimento
-    with st.expander("Vedi dati di esempio"):
-        st.dataframe(sample_data)
+response_text = response.choices[0].message.content
+st.subheader("Risposta in linguaggio naturale:")
+st.write(response_text)
+
+# Se contiene una query SQL, estraila ed eseguila
+if "SELECT" in response_text.upper():
+    import re
+    sql_match = re.search(r"(?i)(SELECT .*?)(?:;|$)", response_text, re.DOTALL)
+    if sql_match:
+        query = sql_match.group(1).strip()
+        st.subheader("Query SQL eseguita:")
+        st.code(query, language="sql")
+        try:
+            result_df = conn.execute(query).fetchdf()
+            st.subheader("Risultato della query:")
+            st.dataframe(result_df)
+        except Exception as e:
+            st.error(f"Errore nell'esecuzione della query: {e}")
 
