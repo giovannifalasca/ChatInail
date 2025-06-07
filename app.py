@@ -5,7 +5,7 @@ import os
 import gdown
 
 # Inizializza il client OpenAI
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 # Configurazione DuckDB
 DB_ID = "1zxdmAM6bP4gNS58yJCCsUMchcBE00NqQ"  # ID del tuo file DuckDB su Google Drive
