@@ -3,6 +3,7 @@ import duckdb
 from openai import OpenAI
 import os
 import gdown
+import re
 
 # Inizializza il client OpenAI
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
@@ -13,9 +14,7 @@ DB_PATH = "infortuni.duckdb"
 
 @st.cache_resource
 def load_db():
-    # Scarica il database da Google Drive se non è già presente
     if not os.path.exists(DB_PATH):
-        # Crea un link diretto a Google Drive per il file
         DB_URL = f"https://drive.google.com/uc?export=download&id={DB_ID}"
         gdown.download(DB_URL, DB_PATH, quiet=True)
     return duckdb.connect(DB_PATH)
@@ -30,6 +29,21 @@ if user_question.strip() != "":
     st.write("Domanda ricevuta:", user_question)
 
     try:
+        # Recupera nome tabella e righe di esempio
+        tables = conn.execute("SHOW TABLES").df()
+        table_name = tables.iloc[0, 0]
+        sample_data = conn.execute(f"SELECT * FROM {table_name} LIMIT 10").df()
+
+        prompt = f"""
+        Questi sono i dati sugli infortuni INAIL (prime 10 righe):
+        {sample_data.to_string(index=False)}
+
+        Rispondi alla domanda basandoti sui dati:
+        {user_question}
+
+        Se la domanda richiede operazioni sui dati, suggerisci anche la query SQL che potrei usare.
+        """
+
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[ 
@@ -42,9 +56,8 @@ if user_question.strip() != "":
         st.subheader("Risposta in linguaggio naturale:")
         st.write(response_text)
 
-        # Esegue la query se c'è
+        # Prova ad estrarre ed eseguire una query SQL se presente
         if "SELECT" in response_text.upper():
-            import re
             sql_match = re.search(r"(?i)(SELECT .*?)(?:;|$)", response_text, re.DOTALL)
             if sql_match:
                 query = sql_match.group(1).strip()
